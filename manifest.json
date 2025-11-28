@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "GPThreads",
+  "version": "0.1",
+  "description": "Extension test",
+
+  "permissions": ["activeTab"],
+
+  "content_scripts": [
+    {
+      "matches": ["*://chatgpt.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+
+
+}
