@@ -2,7 +2,6 @@ console.log("GPThreads content script loaded!");
 
 let anchorList = [];
 
-
 const panel = document.createElement("div")
 panel.style.position = "fixed";
 panel.style.bottom = "20px";
@@ -12,7 +11,6 @@ panel.style.background = "rgb(51,51,51)";
 panel.style.color = "white";
 panel.style.borderRadius = "6px";
 panel.style.zIndex = "99999";
-
 
 let anchorCount = 0;
 const header = document.createElement("div");
@@ -64,23 +62,41 @@ chrome.runtime.onMessage.addListener((msg) => {
             return node;
 
         }
+        const block = getSelectedBlock();
+        console.log(block);
 
-        console.log(getSelectedBlock());
+        //1 Create anchor item and define the index
+        anchorItem = document.createElement("div");
+        anchorItem.dataset.index = anchorList.length;
 
-        let anchorItem = document.createElement("div");
+        //2 If the anchor item is clicked, scroll to the corresponding index
+        anchorItem.addEventListener("click", function(event){
+            event.stopPropagation();
+            const index = Number(anchorItem.dataset.index);
+            const target = anchorList[index].element;
+            if (target) {
+                target.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+
+        })
+
         anchorItem.textContent = highlight;
         anchorItem.style.padding = "4px";
         anchorItem.style.borderRadius = "4px";
         anchorItem.style.background = "rgb(51,51,51)";
         anchorItem.style.marginTop = "5px";
         panel.appendChild(anchorItem);
-        anchorList.push(anchorItem);
+
+        //save anchor data
+        anchorList.push({
+            element: block,
+            label: highlight
+        })
         header.textContent = `📌 GPThreads (${anchorCount})`;
         console.log(anchorList);
     }
 
 });
-
 
 
 
