@@ -4,8 +4,13 @@
   "version": "0.1",
   "description": "Extension test",
 
-  "permissions": ["activeTab"],
-
+  "permissions": [
+    "contextMenus",
+    "activeTab",
+    "scripting"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["*://chatgpt.com/*"],
