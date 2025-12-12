@@ -45,7 +45,7 @@ chrome.runtime.onMessage.addListener((msg) => {
             const range = sel.getRangeAt(0);
             let node = range.startContainer;
 
-            //If the node is a text node, get the parent node
+            //If the node is a text node, get the parent node. Block elements are much more stable
             if(node.nodeType === Node.TEXT_NODE){
                 node = node.parentNode;
             }
@@ -62,54 +62,11 @@ chrome.runtime.onMessage.addListener((msg) => {
             return node;
 
         }
-        const targetElement = getSelectedBlock();
-        console.log(targetElement);
-
-
-        function getPathFromRoot(root, target) {
-            const path = [];
-            let node = target;
-
-            while (node && node !== root) {
-                const parent = node.parentElement;
-                if (!parent) break;
-
-                const children = Array.from(parent.children);
-                const index = children.indexOf(node);
-
-                // If node isn't a direct child element, stop
-                if (index === -1) break;
-
-                path.unshift(index);
-                node = parent;
-            }
-
-            if (node !== root) {
-                // Could not reach root cleanly
-                return null;
-            }
-
-            return path;
-        }
-
-        const messageElement = targetElement.closest("[data-message-id]");
-        let messageID = null;
-        if(messageElement){
-
-            messageID = messageElement.getAttribute("data-message-id");
-
-        }
-
-        let path = null;
-        if (messageElement) {
-            path = getPathFromRoot(messageElement, targetElement);
-        }
-
-
-        console.log("message ID: " + messageID);
+        const block = getSelectedBlock();
+        console.log(block);
 
         //1 Create anchor item and define the index
-        anchorItem = document.createElement("div");
+        const anchorItem = document.createElement("div");
         anchorItem.dataset.index = anchorList.length;
 
         //2 If the anchor item is clicked, scroll to the corresponding index
@@ -118,7 +75,7 @@ chrome.runtime.onMessage.addListener((msg) => {
             const index = Number(anchorItem.dataset.index);
             const target = anchorList[index].element;
             if (target) {
-                target.scrollIntoView({ behavior: "smooth", targetElement: "center" });
+                target.scrollIntoView({ behavior: "smooth", block: "center" });
             }
 
         })
@@ -132,16 +89,13 @@ chrome.runtime.onMessage.addListener((msg) => {
 
         //save anchor data
         anchorList.push({
-            element: targetElement,
-            label: highlight,
-            messageID: messageID,
-            path: path
+            element: block,
+            label: highlight
         })
         header.textContent = `📌 GPThreads (${anchorCount})`;
         console.log(anchorList);
     }
 
 });
-
 
 
