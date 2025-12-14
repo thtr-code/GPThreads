@@ -23,10 +23,6 @@ panel.appendChild(header);
 let chatURL = window.location.pathname;
 chatURL = chatURL.split("/")[chatURL.split("/").length - 1];
 
-chrome.storage.local.get(chatURL, (result) => {
-    const anchors = result[chatURL] || [];
-    console.log(anchors);
-});
 
 
 //Do not do anything on header click
@@ -35,6 +31,59 @@ header.addEventListener("click", function(event){
     console.log("Clicked header");
 
 })
+
+
+function reconstructPath(locator){
+    let root = document.querySelector(`[data-message-id="${locator.messageID}"]`);
+    if(!root){ return null; }
+
+    for (let i = 0; i < locator.path.length; i ++){
+
+        let current = root.children[locator.path[i]];
+        if(!current){
+            console.log("Could not find element at path", locator.path);
+
+            return null;
+        }
+        root = current;
+    }
+    return root;
+}
+
+//Load anchors from storage
+
+chrome.storage.local.get(chatURL, (result) => {
+    const savedAnchors = result[chatURL] || [];
+
+    anchorList = savedAnchors;
+    anchorCount = savedAnchors.length;
+    header.textContent = `📌 GPThreads (${anchorCount})`;
+
+    savedAnchors.forEach((anchor) => {
+        const anchorItem = document.createElement("div");
+        anchorItem.dataset.id = anchor.id;
+        anchorItem.textContent = anchor.label;
+
+        anchorItem.style.padding = "4px";
+        anchorItem.style.borderRadius = "4px";
+        anchorItem.style.background = "rgb(51,51,51)";
+        anchorItem.style.marginTop = "5px";
+
+        anchorItem.addEventListener("click", function (event) {
+            event.stopPropagation();
+
+            const reconstructed = reconstructPath(anchor.locator);
+            if (reconstructed) {
+                reconstructed.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+            }
+        });
+
+        panel.appendChild(anchorItem);
+    });
+});
 
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === "set-anchor") {
@@ -90,23 +139,6 @@ chrome.runtime.onMessage.addListener((msg) => {
              }
              return path;
 
-        }
-
-        function reconstructPath(locator){
-            let root = document.querySelector(`[data-message-id="${locator.messageID}"]`);
-            if(!root){ return null; }
-
-            for (let i = 0; i < locator.path.length; i ++){
-
-                let current = root.children[locator.path[i]];
-                if(!current){
-                    console.log("Could not find element at path", locator.path);
-
-                    return null;
-                }
-                root = current;
-            }
-            return root;
         }
 
         //1 Create anchor item and define the index
