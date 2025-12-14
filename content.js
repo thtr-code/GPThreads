@@ -31,6 +31,8 @@ header.addEventListener("click", function(event){
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === "set-anchor") {
         anchorCount++;
+        let id = anchorCount;
+
 
         //Get the highlighted text
         let highlight = window.getSelection().toString();
@@ -41,8 +43,7 @@ chrome.runtime.onMessage.addListener((msg) => {
 
         function getSelectedBlock(){
             //Get the range (start and end containers) as well as the starting node
-            const sel = window.getSelection();
-            const range = sel.getRangeAt(0);
+            const range = window.getSelection().getRangeAt(0);
             let node = range.startContainer;
 
             //If the node is a text node, get the parent node. Block elements are much more stable
@@ -65,19 +66,56 @@ chrome.runtime.onMessage.addListener((msg) => {
         const block = getSelectedBlock();
         console.log(block);
 
+        const root = block.closest("[data-message-id]");
+
+        function rootPath(root, target){
+             let path = [];
+             let current = target;
+             while(current && current !== root){
+                let index = Array.from(current.parentElement.children).indexOf(current);
+                path.unshift(index);
+                current = current.parentElement;
+
+             }
+             return path;
+
+        }
+
+        function reconstructPath(locator){
+            let root = document.querySelector(`[data-message-id="${locator.messageID}"]`);
+            if(!root){ return null; }
+
+            for (let i = 0; i < locator.path.length; i ++){
+
+                let current = root.children[locator.path[i]];
+                if(!current){
+                    console.log("Could not find element at path", locator.path);
+
+                    return null;
+                }
+                root = current;
+            }
+            return root;
+        }
+
         //1 Create anchor item and define the index
         const anchorItem = document.createElement("div");
-        anchorItem.dataset.index = anchorList.length;
+        anchorItem.dataset.id = id;
+
 
         //2 If the anchor item is clicked, scroll to the corresponding index
         anchorItem.addEventListener("click", function(event){
             event.stopPropagation();
-            const index = Number(anchorItem.dataset.index);
-            const target = anchorList[index].element;
-            if (target) {
-                target.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
+            const id = Number(anchorItem.dataset.id);
+            const anchor = anchorList.find(a => a.id === id);
+            if (!anchor) return;
 
+            let reconstructedPath = reconstructPath(anchor.locator);
+
+
+            if (reconstructedPath) {
+                reconstructedPath.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
         })
 
         anchorItem.textContent = highlight;
@@ -87,15 +125,29 @@ chrome.runtime.onMessage.addListener((msg) => {
         anchorItem.style.marginTop = "5px";
         panel.appendChild(anchorItem);
 
+        const messageID = root.getAttribute("data-message-id");
+        const path = rootPath(root, block); // (path , target)
+        const snippet = (block.innerText || "").trim().replace(/\s+/g, " ").slice(0, 80);
+        const tagName = block.tagName;
+        console.log("ROOT:", root);
+
         //save anchor data
         anchorList.push({
-            element: block,
-            label: highlight
+            id: id,
+            label: highlight,
+            locator: {
+                messageID: messageID,
+                path: path,
+                snippet: snippet,
+                tagName: tagName
+            }
         })
+
         header.textContent = `📌 GPThreads (${anchorCount})`;
-        console.log(anchorList);
+      //  console.log(anchorList);
     }
 
 });
+
 
 
