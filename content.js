@@ -20,6 +20,14 @@ header.style.marginBottom = "6px";
 
 document.body.appendChild(panel);
 panel.appendChild(header);
+let chatURL = window.location.pathname;
+chatURL = chatURL.split("/")[chatURL.split("/").length - 1];
+
+chrome.storage.local.get(chatURL, (result) => {
+    const anchors = result[chatURL] || [];
+    console.log(anchors);
+});
+
 
 //Do not do anything on header click
 header.addEventListener("click", function(event){
@@ -40,6 +48,9 @@ chrome.runtime.onMessage.addListener((msg) => {
         highlight = highlight.slice(0, 40);
         highlight = highlight.replace(/\s+/g, " ");
         console.log(highlight);
+
+
+        console.log(chatURL);
 
         function getSelectedBlock(){
             //Get the range (start and end containers) as well as the starting node
@@ -142,6 +153,7 @@ chrome.runtime.onMessage.addListener((msg) => {
                 tagName: tagName
             }
         })
+        chrome.runtime.sendMessage({action: "save-anchors", convoID: chatURL, anchors: anchorList});
 
         header.textContent = `📌 GPThreads (${anchorCount})`;
       //  console.log(anchorList);

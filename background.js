@@ -13,3 +13,19 @@ chrome.contextMenus.onClicked.addListener((info, tab) =>{
 
 });
 
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if(msg.action === "save-anchors"){
+        const convoID = msg.convoID;
+        const anchors = msg.anchors;
+        chrome.storage.local.set({[convoID]: anchors});
+    }
+    if(msg.action === "get-anchors"){
+        chrome.storage.local.get(msg.convoID, (result) => {
+            sendResponse(result[msg.convoID] || []);
+
+        });
+
+        return true;
+    }
+
+});
